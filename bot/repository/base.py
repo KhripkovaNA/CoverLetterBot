@@ -4,12 +4,16 @@ from sqlalchemy.future import select
 from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete, func
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
+
+from bot.database import connection
 
 
 class BaseRepository:
     model = None  # set in the child class
 
     @classmethod
+    @connection
     async def find_one_or_none_by_id(cls, data_id: int, session: AsyncSession):
         # find a record by id
         logger.info(f"Поиск {cls.model.__name__} с id: {data_id}")
@@ -27,17 +31,30 @@ class BaseRepository:
             raise
 
     @classmethod
+    @connection
     async def find_one_or_none(cls, session: AsyncSession, **filter_by):
         # find one record by filters
         logger.info(f"Поиск одной записи {cls.model.__name__} по фильтрам: {filter_by}")
+        related_objects = filter_by.pop('related_objects', [])
+        load_strategy = filter_by.pop('load_strategy', 'joined')
         try:
             query = select(cls.model).filter_by(**filter_by)
+
+            if related_objects:
+                if load_strategy == 'joined':
+                    for rel in related_objects:
+                        query = query.options(joinedload(getattr(cls.model, rel)))
+                elif load_strategy == 'selectin':
+                    for rel in related_objects:
+                        query = query.options(selectinload(getattr(cls.model, rel)))
+
             result = await session.execute(query)
             record = result.scalar_one_or_none()
+
             if record:
-                logger.info(f"Запись найдена по фильтрам: {filter_by}")
+                logger.info(f"Запись найдена по фильтрам: {filter_by}.")
             else:
-                logger.info(f"Запись не найдена по фильтрам: {filter_by}")
+                logger.info(f"Запись не найдена по фильтрам: {filter_by}.")
             return record
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при поиске записи по фильтрам {filter_by}: {e}")
@@ -46,7 +63,7 @@ class BaseRepository:
     @classmethod
     async def find_all(cls, session: AsyncSession, **filter_by):
         # find all records by filters
-        logger.info(f"Поиск всех записей {cls.model.__name__} по фильтрам: {filter_by}")
+        logger.info(f"Поиск всех записей {cls.model.__name__}.")
         try:
             query = select(cls.model).filter_by(**filter_by)
             result = await session.execute(query)
@@ -58,9 +75,10 @@ class BaseRepository:
             raise
 
     @classmethod
+    @connection
     async def add(cls, session: AsyncSession, **values):
         # add a record
-        logger.info(f"Добавление записи {cls.model.__name__} с параметрами: {values}")
+        logger.info(f"Добавление записи {cls.model.__name__}")
         new_instance = cls.model(**values)
         session.add(new_instance)
         try:
@@ -73,9 +91,10 @@ class BaseRepository:
         return new_instance
 
     @classmethod
+    @connection
     async def update(cls, session: AsyncSession, filter_by: Dict[str, Any], **values):
         # update a record by filters
-        logger.info(f"Обновление записей {cls.model.__name__} по фильтру: {filter_by} с параметрами: {values}")
+        logger.info(f"Обновление записей {cls.model.__name__} по фильтрам {filter_by}.")
         query = (
             sqlalchemy_update(cls.model)
             .where(*[getattr(cls.model, k) == v for k, v in filter_by.items()])
@@ -93,6 +112,7 @@ class BaseRepository:
             raise e
 
     @classmethod
+    @connection
     async def delete(cls, session: AsyncSession, delete_all: bool = False, **filter_by):
         # delete a record by filters
         logger.info(f"Удаление записей {cls.model.__name__} по фильтру: {filter_by}")
