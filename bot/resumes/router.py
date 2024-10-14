@@ -44,7 +44,7 @@ async def handle_resume_upload(message: Message):
                 await message.answer("Скопируйте и отправьте текст вакансии")
 
             else:
-                await message.answer("Не удалось конвертировать pdf в текст")
+                await message.answer("Не удалось конвертировать pdf в текст. Попробуйте загрузить другой файл")
 
         else:
             await message.answer("Пожалуйста, загрузите pdf файл")

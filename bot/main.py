@@ -2,8 +2,9 @@ import asyncio
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 from bot.config import bot, dp
-from bot.resumes.router import resume_router
 from bot.users.router import user_router
+from bot.resumes.router import resume_router
+from bot.cover_letters.router import cover_letter_router
 
 
 # Function to set default command menu
@@ -27,6 +28,7 @@ async def main():
     # registration of the routs
     dp.include_router(user_router)
     dp.include_router(resume_router)
+    dp.include_router(cover_letter_router)
 
     # registration of the functions
     dp.startup.register(start_bot)

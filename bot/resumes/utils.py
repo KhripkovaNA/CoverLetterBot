@@ -1,15 +1,13 @@
 from io import BytesIO
-from pprint import pprint
-
 import aiohttp
 from loguru import logger
-from bot.config import settings
+from bot.config import cm_api_key
 
 
 async def convert_pdf_to_text(file_stream: BytesIO):
     url = "https://api.cloudmersive.com/convert/pdf/to/txt"
     headers = {
-        "Apikey": settings.CLOUDMERSIVE_API_KEY,
+        "Apikey": cm_api_key,
         "textFormattingMode": "minimizeWhitespace"
     }
     files = {
