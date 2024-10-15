@@ -8,6 +8,7 @@ client = AsyncOpenAI(
 )
 
 
+# Function to generate cover letter using the OpenAI API
 async def generate_cover_letter(resume_text, vacancy_text):
     prompt = f"""
     Напиши сопроводительное письмо на основе следующего резюме и текста вакансии.
@@ -24,7 +25,7 @@ async def generate_cover_letter(resume_text, vacancy_text):
     try:
         logger.info("Отправка запроса на генерацию сопроводительного письма...")
 
-        # Асинхронный запрос к OpenAI через библиотеку AsyncOpenAI
+        # Asynchronous request to OpenAI using AsyncOpenAI client
         response = await client.chat.completions.create(
             messages=[
                 {
@@ -32,10 +33,10 @@ async def generate_cover_letter(resume_text, vacancy_text):
                     "content": prompt,
                 }
             ],
-            model="gpt-4o-mini"  # Проверь правильность модели
+            model="gpt-4o-mini"
         )
 
-        # Получение ответа
+        # Retrieving the response
         cover_letter = response.choices[0].message.content.strip()
 
         logger.info("Сопроводительное письмо успешно сгенерировано.")

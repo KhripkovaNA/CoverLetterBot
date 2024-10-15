@@ -4,6 +4,7 @@ from loguru import logger
 from bot.config import cm_api_key
 
 
+# Function to convert a PDF file to text using the Cloudmersive API
 async def convert_pdf_to_text(file_stream: BytesIO):
     url = "https://api.cloudmersive.com/convert/pdf/to/txt"
     headers = {
@@ -14,6 +15,7 @@ async def convert_pdf_to_text(file_stream: BytesIO):
         "file": file_stream
     }
 
+    # Create an asynchronous HTTP session to make the request
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(url, headers=headers, data=files) as response:

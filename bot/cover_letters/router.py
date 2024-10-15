@@ -1,5 +1,4 @@
 import asyncio
-
 from loguru import logger
 from aiogram.types import Message
 from aiogram.dispatcher.router import Router
@@ -12,25 +11,24 @@ MESSAGE_TIMEOUT = 2
 user_messages_cache = {}
 
 
+# Handler for processing user's messages with vacancy description and generating cover letter
 @cover_letter_router.message()
 async def on_vacancy_received(message: Message):
     telegram_id = message.from_user.id
     logger.info(f"Получен запрос от пользователя с telegram_id: {telegram_id}")
 
-    # Если это первое сообщение для пользователя, создаем запись в кэше
+    # Collect all messages from the user during timeout and store them in cache
+
     if telegram_id not in user_messages_cache:
         user_messages_cache[telegram_id] = []
 
-    # Добавляем сообщение пользователя в кэш
     user_messages_cache[telegram_id].append(message.text)
-
-    # Ждем указанное время на случай, если придут еще сообщения
     await asyncio.sleep(MESSAGE_TIMEOUT)
 
-    # После истечения тайм-аута проверяем, что больше сообщений не пришло
     if len(user_messages_cache[telegram_id]) > 1:
         logger.info(f"Получено несколько сообщений от пользователя {telegram_id}. Объединение в один текст.")
 
+    # Join messages to form vacancy description
     vacancy_text = ' '.join(user_messages_cache[telegram_id]).strip()
 
     # Очищаем кэш сообщений после обработки
@@ -38,7 +36,7 @@ async def on_vacancy_received(message: Message):
     telegram_id = message.from_user.id
 
     try:
-        # Поиск пользователя по telegram_id
+        # Find the user by telegram_id
         user = await UserRepository.find_one_or_none(
             telegram_id=telegram_id,
             related_objects=['resumes'],
@@ -72,15 +70,16 @@ async def on_vacancy_received(message: Message):
             await message.reply(msg)
             return
 
+        # Get the user's resume text
         resume_text = user.resumes[0].resume_text
 
         logger.info(f"Генерацию сопроводительного письма для пользователя {telegram_id}")
         await message.answer("Составляем сопроводительное письмо, пожалуйста, подождите...")
 
-        # Генерация сопроводительного письма
+        # Generate the cover letter
         cover_letter = await generate_cover_letter(resume_text, vacancy_text)
 
-        # Ответ пользователю
+        # Respond to the user
         if cover_letter:
             logger.info(f"Сопроводительное письмо сгенерировано для пользователя {telegram_id}")
             await message.answer("Ваше сопроводительное письмо готово!")
@@ -90,5 +89,6 @@ async def on_vacancy_received(message: Message):
             await message.answer("Не удалось сгенерировать сопроводительное письмо.")
 
     except Exception as e:
+        # Log any errors and inform the user of the failure
         logger.error(f"Ошибка при генерации сопроводительного письма для пользователя {telegram_id}: {e}")
         await message.answer("Произошла ошибка при генерации сопроводительного письма.")

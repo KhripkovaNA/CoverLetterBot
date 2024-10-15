@@ -23,14 +23,18 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Bot and dispatcher initialisation
-bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+# Initialize bot and dispatcher
+bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
 dp = Dispatcher(storage=MemoryStorage())
 
-
+# Set up logging with log file rotation
 log_file_path = os.path.join(basedir, "log.txt")
 logger.add(log_file_path, format=settings.FORMAT_LOG, level="INFO", rotation=settings.LOG_ROTATION)
+
+# Get database URL
 database_url = settings.DB_URL
+
+# Get API keys from environment variables or .env file
 cm_api_key = settings.CLOUDMERSIVE_API_KEY
 openai_key = settings.OPENAIAPI_KEY
 

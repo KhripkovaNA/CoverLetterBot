@@ -13,28 +13,28 @@ async def set_commands():
     await bot.set_my_commands(commands, BotCommandScopeDefault())
 
 
-# Function to be executed when the bot is started
+# Function to be executed when the bot starts
 async def start_bot():
     await set_commands()
     logger.info("Бот запущен")
 
 
-# Function to be executed when the bot is stopped
+# Function to be executed when the bot stops
 async def stop_bot():
     logger.error("Бот остановлен")
 
 
 async def main():
-    # registration of the routs
+    # Registering the routes
     dp.include_router(user_router)
     dp.include_router(resume_router)
     dp.include_router(cover_letter_router)
 
-    # registration of the functions
+    # Registering the startup and shutdown functions
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
 
-    # launching the bot in long polling mode cleaning all the updates during standby
+    # Launching the bot in long polling mode and clearing all pending updates
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
